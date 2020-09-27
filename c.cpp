@@ -6,15 +6,19 @@ using namespace std;
 struct Enrollee {
     std::string surname_;
     std::string name_;
-    int points_;
+    size_t points_;
 
     Enrollee() = default;
 
     Enrollee(const std::string &surname, const std::string &name, int inf_point, int math_points, int rus_points)
             : surname_(surname), name_(name), points_(inf_point + math_points + rus_points) {};
 
-    bool operator>=(const Enrollee &other) const {
-        return points_ >= other.points_;
+    bool operator>(const Enrollee &other) const {
+        return points_ > other.points_;
+    }
+
+    bool operator==(const Enrollee &other) const {
+        return points_ == other.points_;
     }
 
     friend ostream &operator<<(ostream &os, const Enrollee &enrollee) {
@@ -23,64 +27,66 @@ struct Enrollee {
     }
 };
 
-void read_arr(vector<Enrollee> &arr) {
+void read_arr(vector<Enrollee> &enrollees) {
     size_t n;
     cin >> n;
-    arr.reserve(n);
+    enrollees.reserve(n);
     std::string name, surname;
     int inf_points, math_points, rus_points;
     for (size_t i = 0; i < n; ++i) {
         cin >> surname >> name >> inf_points >> math_points >> rus_points;
-        arr.emplace_back(Enrollee(surname, name, inf_points, math_points, rus_points));
+        enrollees.emplace_back(Enrollee(surname, name, inf_points, math_points, rus_points));
     }
 }
 
-void merge(vector<Enrollee> &arr, size_t left, size_t mid, size_t right) {
-    vector<Enrollee> result;
-    result.reserve(right - left + 1);
-    size_t i = left, j = mid + 1;
-    while (i <= mid && j <= right) {
-        if (arr[i] >= arr[j]) {
-            result.emplace_back(arr[i]);
-            ++i;
+template<class RandomIt>
+void add_in_result (RandomIt& enrollee, vector<Enrollee> &result) {
+    result.emplace_back(*enrollee);
+    ++enrollee;
+}
+
+template<class RandomIt, typename Comp>
+void merge(RandomIt left, RandomIt mid, RandomIt right, Comp comp) {
+    vector<typename std::iterator_traits<RandomIt>::value_type> result;
+    result.reserve(right - left);
+    RandomIt i = left, j = mid;
+    while (i < mid && j < right) {
+        if (comp(*j, *i)) {
+            add_in_result(j, result);
         } else {
-            result.emplace_back(arr[j]);
-            ++j;
+            add_in_result(i, result);
         }
     }
-    while (i <= mid) {
-        result.emplace_back(arr[i]);
-        ++i;
+    while (i < mid) {
+        add_in_result(i, result);
     }
-    while (j <= right) {
-        result.emplace_back(arr[j]);
-        ++j;
+    while (j < right) {
+        add_in_result(j, result);
     }
-    for (i = left; i <= right; ++i) {
-        arr[i] = result[i - left];
-    }
+    std::copy(result.begin(), result.end(), left);
 }
 
-void merge_sort(vector<Enrollee> &arr, size_t left, size_t right) {
-    if (left < right) {
-        size_t mid = (left + right) / 2;
-        merge_sort(arr, left, mid);
-        merge_sort(arr, mid + 1, right);
-        merge(arr, left, mid, right);
+template <class RandomIt, typename Comp = std::less<>>
+void merge_sort(RandomIt left, RandomIt right, Comp comp = Comp()) {
+    if (right - left > 1) {
+        RandomIt mid = left + (right - left) / 2;
+        merge_sort(left, mid, comp);
+        merge_sort(mid, right, comp);
+        merge(left, mid, right, comp);
     }
 }
 
 int main() {
-    vector<Enrollee> arr;
-    read_arr(arr);
+    vector<Enrollee> enrollees;
+    read_arr(enrollees);
 
-    merge_sort(arr, 0, arr.size() - 1);
+    merge_sort(enrollees.begin(), enrollees.end(), std::greater<>());
 
-    for (size_t i = 0; i < arr.size(); ++i) {
-        cout << arr[i] << "\n";
+    for (Enrollee enrollee : enrollees) {
+        cout << enrollee << "\n";
     }
 
-    arr.clear();
+    enrollees.clear();
 
     return 0;
 }
