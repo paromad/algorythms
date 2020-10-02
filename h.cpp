@@ -6,13 +6,14 @@
 
 using namespace std;
 
+template<typename T>
 class UnorderedSet {
-    static const size_t start_size_ = 100;
-    static const size_t index_of_expansion = 2;
-    vector<list<string>> strings_;
+    static const size_t START_SIZE = 100;
+    static const size_t INDEX_OF_EXPLANSION = 2;
+    vector<list<T>> elements_;
     size_t size_;
 
-    void InsertElementsFromVector(const vector<list<string>> &strings) {
+    void InsertElementsFromVector(const vector<list<T>> &strings) {
         for (const auto &i : strings) {
             for (const auto &j : i) {
                 Insert(j);
@@ -20,37 +21,37 @@ class UnorderedSet {
         }
     }
 
-    size_t Hash(std::string x) {
-        return std::hash<string>{}(x) % strings_.size();
+    size_t Hash(T x) {
+        return std::hash<T>{}(x) % elements_.size();
     }
 
 public:
-    UnorderedSet() : strings_(vector<list<string>>(start_size_)), size_(0) {};
+    UnorderedSet() : elements_(vector<list<T>>(START_SIZE)), size_(0) {};
 
     void ChangeSize() {
-        auto tmp = strings_;
-        strings_ = vector<list<string>>(size_ * index_of_expansion);
+        auto tmp = elements_;
+        elements_ = vector<list<T>>(size_ * INDEX_OF_EXPLANSION);
         InsertElementsFromVector(tmp);
     };
 
-    void Insert(const string &x) {
+    void Insert(const T &x) {
         ++size_;
-        if (size_ == strings_.size()) {
+        if (size_ == elements_.size()) {
             ChangeSize();
         }
         size_t hash = Hash(x);
-        strings_[hash].push_back(x);
+        elements_[hash].push_back(x);
     }
 
-    void Erase(const string &x) {
+    void Erase(const T &x) {
         size_t hash = Hash(x);
-        strings_[hash].erase(std::find(strings_[hash].begin(), strings_[hash].end(), x));
+        elements_[hash].erase(std::find(elements_[hash].begin(), elements_[hash].end(), x));
         --size_;
     }
 
-    bool Find(const string &x) {
+    bool Find(const T &x) {
         size_t hash = Hash(x);
-        return std::find(strings_[hash].begin(), strings_[hash].end(), x) != strings_[hash].end();
+        return std::find(elements_[hash].begin(), elements_[hash].end(), x) != elements_[hash].end();
     }
 };
 
@@ -58,7 +59,7 @@ int main() {
     char command;
     std::string string;
 
-    UnorderedSet set;
+    UnorderedSet<std::string> set;
 
     cin >> command;
     while (command != '#') {
