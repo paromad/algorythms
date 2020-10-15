@@ -97,9 +97,6 @@ int main() {
     cin >> vertex_count >> edge_count;
     cin >> start >> finish;
 
-    start;
-    finish;
-
     bool is_directed = false;
 
     AdjListGraph graph(vertex_count, edge_count, is_directed);
