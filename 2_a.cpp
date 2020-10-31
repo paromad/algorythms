@@ -32,8 +32,11 @@ public:
 
     virtual std::vector<Vertex> get_neighbours(Vertex v) const = 0;
 
-    virtual std::vector<Vertex> get_shortest_path(const Vertex &v, size_t dist, const vector<Vertex> &parent) const = 0;
+    virtual std::vector<Vertex> get_shortest_path(const Vertex &start, const Vertex &finish) const = 0;
 };
+
+
+void BFS(const Graph &graph, const Vertex &start, vector<size_t> &distance, vector<Vertex> &parents);
 
 
 class AdjListGraph : public Graph {
@@ -55,24 +58,29 @@ public:
         return adj_list_[v];
     }
 
-    std::vector<Vertex> get_shortest_path(const Vertex &v, size_t dist, const vector<Vertex> &parent) const override {
+    std::vector<Vertex> get_shortest_path(const Vertex &start, const Vertex &finish) const override {
+        vector<size_t> distance(vertex_count_ + 1, vertex_count_ + 1);
+        vector<Vertex> parent(vertex_count_ + 1);
+
+        BFS(*this, start, distance, parent);
+        size_t dist = distance[finish];
+
         std::vector<Vertex> res;
         if (dist == vertex_count_ + 1) {
             return res;
         }
         res.resize(dist + 1);
-        Vertex finish = v;
-        res[dist] = finish;
+        Vertex end = finish;
+        res[dist] = end;
         for (size_t i = 1; i <= dist; ++i) {
-            finish = parent[finish];
-            res[dist - i] = finish;
+            end = parent[end];
+            res[dist - i] = end;
         }
         return res;
     }
 };
 
-
-void BFS(const Graph &graph, Vertex start, vector<size_t> &distance, vector<Vertex> &parents) {
+void BFS(const Graph &graph, const Vertex &start, vector<size_t> &distance, vector<Vertex> &parents) {
     queue<Vertex> que;
     que.push(start);
     distance[start] = 0;
@@ -87,7 +95,7 @@ void BFS(const Graph &graph, Vertex start, vector<size_t> &distance, vector<Vert
             }
         }
     }
-}
+};
 
 
 int main() {
@@ -102,17 +110,12 @@ int main() {
     AdjListGraph graph(vertex_count, edge_count, is_directed);
 
     for (size_t i = 0; i < edge_count; ++i) {
-        int first, second;
+        Vertex first, second;
         cin >> first >> second;
         graph.add_edge(first, second);
     }
 
-    vector<size_t> distance(vertex_count + 1, vertex_count + 1);
-    vector<Vertex> parent(vertex_count + 1);
-
-    BFS(graph, start, distance, parent);
-
-    vector<Vertex> res = graph.get_shortest_path(finish, distance[finish], parent);
+    vector<Vertex> res = graph.get_shortest_path(start, finish);
 
     if (!res.size()) {
         cout << -1;
@@ -121,8 +124,8 @@ int main() {
 
     cout << res.size() - 1 << "\n";
 
-    for (Vertex i : res) {
-        cout << i << " ";
+    for (Vertex vertex : res) {
+        cout << vertex << " ";
     }
 
     return 0;
