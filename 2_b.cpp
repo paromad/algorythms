@@ -31,13 +31,17 @@ public:
     virtual void add_edge(const Vertex &start, const Vertex &finish) = 0;
 
     virtual std::vector<Vertex> get_neighbours(Vertex v) const = 0;
-
-    virtual std::vector<Vertex> get_shortest_path(const Vertex &v, size_t dist, const vector<Vertex> &parent) const = 0;
 };
 
 
 class AdjListGraph : public Graph {
     vector<vector<Vertex>> adj_list_;
+
+    enum Color {
+        WHITE,
+        GREY,
+        BLACK,
+    };
 public:
     AdjListGraph(size_t vertex_count, size_t edge_count, bool is_directed) : Graph(vertex_count, edge_count,
                                                                                    is_directed) {
@@ -55,31 +59,17 @@ public:
         return adj_list_[v];
     }
 
-    std::vector<Vertex> get_shortest_path(const Vertex &v, size_t dist, const vector<Vertex> &parent) const override {
-        std::vector<Vertex> res;
-        if (dist == vertex_count_ + 1) {
-            return res;
-        }
-        res.resize(dist + 1);
-        Vertex finish = v;
-        res[dist] = finish;
-        for (size_t i = 1; i <= dist; ++i) {
-            finish = parent[finish];
-            res[dist - i] = finish;
-        }
-        return res;
-    }
 
-    bool is_bipart_bfs(const Vertex &start, vector<int> color) {
+    bool is_bipart_bfs(const Vertex &start, vector<Color> color) {
         queue<Vertex> que;
         que.push(start);
-        color[start] = 1;
+        color[start] = GREY;
         while (!que.empty()) {
             Vertex v = que.front();
             que.pop();
             for (Vertex u : get_neighbours(v)) {
-                if (color[u] == 0) {
-                    color[u] = (color[v] == 1 ? 2 : 1);
+                if (color[u] == WHITE) {
+                    color[u] = (color[v] == GREY ? BLACK : GREY);
                     que.push(u);
                 } else {
                     if (color[u] == color[v]) {
@@ -92,9 +82,9 @@ public:
     }
 
     bool is_bipart() {
-        vector<int> color(vertex_count_ + 1, 0);
+        vector<Color> color(vertex_count_ + 1, WHITE);
         for (Vertex i = 1; i <= vertex_count_; ++i) {
-            if (color[i] == 0) {
+            if (color[i] == WHITE) {
                 if (!is_bipart_bfs(i, color)) {
                     return false;
                 }
