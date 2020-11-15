@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
-#include <unordered_map>
+#include <unordered_set>
+#include <queue>
 #include <cstring>
 #include <algorithm>
 
@@ -28,16 +29,9 @@ class DSU {
     unordered_map<T, T> prev;
     unordered_map<T, size_t> rank;
 
-    inline T FindSet(T v) {
-        T original_v = v;
-        while (v != prev[v]) {
-            v = prev[v];
-        }
-        while (original_v != v) {
-            prev[original_v] = v;
-            original_v = prev[original_v];
-        }
-        return v;
+    T FindSet(T v) {
+        if (v == prev[v]) return v;
+        return prev[v] = FindSet(prev[v]);
     };
 public:
     DSU() = default;
@@ -56,53 +50,80 @@ public:
     inline void Union(T x, T y) {
         T X = FindSet(x);
         T Y = FindSet(y);
-        if (X == Y) {
-            exit(-1);
-        }
         if (rank[X] < rank[Y]) {
             prev[X] = Y;
-            rank[Y] += rank[X];
-        } else {
+        } else if (rank[X] > rank[Y]) {
             prev[Y] = X;
-            rank[X] += rank[Y];
+        } else {
+            prev[X] = Y;
+            ++rank[Y];
         }
     };
 };
 
-ull Kruscal_mst_weight (size_t vertex_count, const vector<Edge> &edges) {
-    DSU<Vertex> dsu(vertex_count);
+class Graph {
+protected:
+    size_t vertex_count_;
+    size_t edge_count_;
+    bool is_directed_;
+    vector<Edge> edges_;
+public:
+    Graph(size_t vertex_count, size_t edje_count, bool is_directed) : vertex_count_(vertex_count),
+                                                                      edge_count_(edje_count),
+                                                                      is_directed_(is_directed) {};
 
-    ull MST_weight = 0;
+    size_t get_vertex_count() const {
+        return vertex_count_;
+    };
 
-    for (const Edge &edge : edges) {
-        if (!dsu.InOneSet(edge.from_, edge.to_)) {
-            MST_weight += edge.weight_;
-            dsu.Union(edge.from_, edge.to_);
-        }
+    size_t get_edge_count() const {
+        return edge_count_;
+    };
+
+    bool is_directed() const {
+        return is_directed_;
     }
 
-    return MST_weight;
-}
+    virtual void add_edge(const Edge &edge) {
+        edges_.push_back(edge);
+    };
+
+    ull Kruscal_mst_weight () {
+        DSU<Vertex> dsu(vertex_count_);
+
+        ull MST_weight = 0;
+
+        for (const Edge &edge : edges_) {
+            if (!dsu.InOneSet(edge.from_, edge.to_)) {
+                MST_weight += edge.weight_;
+                dsu.Union(edge.from_, edge.to_);
+            }
+        }
+
+        return MST_weight;
+    }
+};
 
 
 int main() {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(0);
-    std::cout.tie(0);
 
     size_t vertex_count, edge_count;
+
     cin >> vertex_count >> edge_count;
 
-    vector<Edge> edges;
+    bool is_directed = false;
+
+    Graph graph(vertex_count, edge_count, is_directed);
 
     for (size_t i = 0; i < edge_count; ++i) {
-        size_t from, to;
-        ull weight;
+        size_t from, to, weight;
         cin >> from >> to >> weight;
-        edges.push_back(Edge(from, to, weight));
+        graph.add_edge(Edge(from, to, weight));
     }
 
-    cout << Kruscal_mst_weight(vertex_count, edges);
+    cout << graph.Kruscal_mst_weight();
 
     return 0;
 }
