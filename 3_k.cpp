@@ -28,10 +28,12 @@ protected:
     size_t vertex_count_;
     size_t edge_count_;
     bool is_directed_;
+    Vertex start_;
 public:
-    Graph(size_t vertex_count, size_t edje_count, bool is_directed) : vertex_count_(vertex_count),
-                                                                      edge_count_(edje_count),
-                                                                      is_directed_(is_directed) {};
+    Graph(size_t vertex_count, size_t edje_count, bool is_directed, Vertex start = 1) : vertex_count_(vertex_count),
+                                                                                        edge_count_(edje_count),
+                                                                                        is_directed_(is_directed),
+                                                                                        start_(1) {};
 
     size_t get_vertex_count() const {
         return vertex_count_;
@@ -41,6 +43,10 @@ public:
         return edge_count_;
     };
 
+    Vertex get_start() const {
+        return start_;
+    }
+
     bool is_directed() const {
         return is_directed_;
     }
@@ -48,38 +54,39 @@ public:
     virtual void add_edge(const Edge &edge) = 0;
 
     const virtual std::vector<Edge> &get_neighbours(Vertex v) const = 0;
+};
 
-    size_t Prime_mst_weight() {
-        unordered_map<Vertex, bool> vertexes_in_MST;
 
-        priority_queue<Edge, std::vector<Edge>, std::greater<>> heap;
+size_t Prime_mst_weight(const Graph &graph) {
+    unordered_map<Vertex, bool> vertexes_in_MST;
 
-        size_t MST_weight = 0;
+    priority_queue<Edge, std::vector<Edge>, std::greater<>> heap;
 
-        vertexes_in_MST[1] = true;
-        for (const Edge &edge : get_neighbours(1)) {
+    size_t MST_weight = 0;
+
+    vertexes_in_MST[1] = true;
+    for (const Edge &edge : graph.get_neighbours(graph.get_start())) {
+        heap.push(edge);
+    }
+    for (size_t i = 1; i < graph.get_vertex_count(); ++i) {
+        bool find_edge = false;
+        Edge e;
+        do {
+            e = heap.top();
+            heap.pop();
+            if (!vertexes_in_MST[e.to_]) {
+                MST_weight += e.weight_;
+                vertexes_in_MST[e.to_] = true;
+                find_edge = true;
+            }
+        } while (!find_edge);
+
+        for (const Edge &edge : graph.get_neighbours(e.to_)) {
             heap.push(edge);
         }
-        for (size_t i = 1; i < vertex_count_; ++i) {
-            bool find_edge = false;
-            Edge e;
-            do {
-                e = heap.top();
-                heap.pop();
-                if (vertexes_in_MST[e.to_] != true) {
-                    MST_weight += e.weight_;
-                    vertexes_in_MST[e.to_] = true;
-                    find_edge = true;
-                }
-            } while (!find_edge);
-
-            for (const Edge &edge : get_neighbours(e.to_)) {
-                heap.push(edge);
-            }
-        }
-        return MST_weight;
     }
-};
+    return MST_weight;
+}
 
 
 class AdjListGraph : public Graph {
@@ -121,7 +128,7 @@ int main() {
         graph.add_edge(Edge(from, to, weight));
     }
 
-    cout << graph.Prime_mst_weight();
+    cout << Prime_mst_weight(graph);
 
     return 0;
 }
